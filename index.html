@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maquillaje Cabalgata - Gestión de Citas</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            /* slate-50 */
+        }
+
+        .text-pink-600 {
+            color: #db2777;
+        }
+
+        .bg-pink-600 {
+            background-color: #db2777;
+        }
+
+        .hover\:bg-pink-700:hover {
+            background-color: #c026d3;
+        }
+
+        /* Slightly darker pink for hover */
+        .text-indigo-600 {
+            color: #4f46e5;
+        }
+
+        .bg-indigo-600 {
+            background-color: #4f46e5;
+        }
+
+        .hover\:bg-indigo-700:hover {
+            background-color: #4338ca;
+        }
+
+        /* Slightly darker indigo for hover */
+        .rounded-\[2rem\] {
+            border-radius: 2rem;
+        }
+
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-gray-800 p-4 min-h-screen flex flex-col items-center">
+
+    <div class="max-w-4xl w-full p-6 bg-white shadow-xl rounded-[2rem] space-y-8">
+
+        <!-- Header Section -->
+        <header class="flex flex-col md:flex-row items-center justify-between gap-4 pb-6 border-b border-gray-200">
+            <div class="flex items-center gap-4">
+                <h1 class="text-3xl font-extrabold text-pink-600">Maquillaje Cabalgata</h1>
+                <div id="connectionStatus" class="w-4 h-4 rounded-full bg-yellow-500 transition-colors duration-300"
+                    title="Estado de la conexión"></div>
+            </div>
+            <div class="text-gray-600 text-lg">
+                Total Inscritos: <span id="totalRegisteredCount" class="text-pink-600 font-bold text-4xl ml-2">0</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="space-y-8">
+
+            <!-- Horarios Grid -->
+            <section>
+                <h2 class="text-2xl font-bold text-indigo-600 mb-4">Selecciona un Horario</h2>
+                <div id="scheduleGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <!-- Horarios se cargarán aquí dinámicamente -->
+                </div>
+            </section>
+
+            <!-- Registration Panel -->
+            <section id="registrationPanel"
+                class="bg-gray-50 p-6 rounded-[2rem] shadow-inner border border-gray-100 hidden">
+                <h2 class="text-2xl font-bold text-indigo-600 mb-4">Inscríbete en el turno de <span
+                        id="selectedSlotTime" class="text-pink-600"></span></h2>
+                <form id="registrationForm" class="space-y-4">
+                    <div>
+                        <label for="fullName" class="block text-sm font-medium text-gray-700">Nombre Completo</label>
+                        <input type="text" id="fullName" name="fullName" required
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-pink-500 focus:border-pink-500">
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-pink-600 text-white font-semibold py-3 px-4 rounded-md shadow-md hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 transition-colors duration-200">
+                        Confirmar Inscripción
+                    </button>
+                    <div id="registrationMessage" class="mt-4 text-center font-medium"></div>
+                </form>
+
+                <div class="mt-6">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-3">Personas inscritas en este turno (<span
+                            id="currentSlotCount">0</span>/20)</h3>
+                    <ul id="registeredNamesList"
+                        class="bg-white border border-gray-200 rounded-md divide-y divide-gray-100 max-h-60 overflow-y-auto">
+                        <!-- Nombres se cargarán aquí dinámicamente -->
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Diana's Administration Panel -->
+            <section class="mt-8 pt-8 border-t border-gray-200">
+                <h2 class="text-2xl font-bold text-indigo-600 mb-4">Funciones de Administración (Diana)</h2>
+                <div class="flex flex-col md:flex-row gap-4 mb-6">
+                    <button id="viewDianaBtn"
+                        class="flex-1 bg-indigo-600 text-white font-semibold py-3 px-4 rounded-md shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200">
+                        Vista Diana (Ver Todo el Día)
+                    </button>
+                    <button id="exportDataBtn"
+                        class="flex-1 bg-gray-700 text-white font-semibold py-3 px-4 rounded-md shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
+                        Exportar Datos (.txt)
+                    </button>
+                </div>
+                <div id="dianaViewContent"
+                    class="bg-gray-50 p-6 rounded-[2rem] shadow-inner border border-gray-100 hidden">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Resumen de Citas por Turno</h3>
+                    <div id="dianaAppointmentsList" class="space-y-4">
+                        <!-- Contenido de la vista de Diana se cargará aquí -->
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Firebase SDKs - v10.7.0 for modular API -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, runTransaction, arrayUnion, arrayRemove, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+
+        // Firebase Configuration - REPLACE WITH YOUR PROJECT'S CONFIG
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY_HERE", // Example: "AIzaSyC_your_api_key_here"
+            authDomain: "maquillaje-encuesta.firebaseapp.com",
+            projectId: "maquillaje-encuesta",
+            storageBucket: "maquillaje-encuesta.appspot.com",
+            messagingSenderId: "60091919517", // Your Project Number
+            appId: "YOUR_APP_ID_HERE", // Example: "1:60091919517:web:your_app_id"
+            measurementId: "YOUR_MEASUREMENT_ID_HERE" // Example: "G-XXXXXXXXXX"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Firestore References
+        const APP_ID = firebaseConfig.projectId; // Using projectId as appId for data path
+        const registrationsCollectionRef = collection(db, `artifacts/${APP_ID}/public/data/registrations`);
+
+        // DOM Elements
+        const connectionStatusDot = document.getElementById('connectionStatus');
+        const totalRegisteredCountSpan = document.getElementById('totalRegisteredCount');
+        const scheduleGrid = document.getElementById('scheduleGrid');
+        const registrationPanel = document.getElementById('registrationPanel');
+        const selectedSlotTimeSpan = document.getElementById('selectedSlotTime');
+        const fullNameInput = document.getElementById('fullName');
+        const registrationForm = document.getElementById('registrationForm');
+        const registrationMessageDiv = document.getElementById('registrationMessage');
+        const currentSlotCountSpan = document.getElementById('currentSlotCount');
+        const registeredNamesList = document.getElementById('registeredNamesList');
+        const viewDianaBtn = document.getElementById('viewDianaBtn');
+        const exportDataBtn = document.getElementById('exportDataBtn');
+        const dianaViewContent = document.getElementById('dianaViewContent');
+        const dianaAppointmentsList = document.getElementById('dianaAppointmentsList');
+
+        let currentUser = null;
+        let allRegistrationsData = {}; // Global store for all slot data
+        let selectedTimeSlotId = null; // Currently active slot for registration
+
+        // --- Utility Functions ---
+        function formatTime(hour, minute) {
+            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        }
+
+        function generateTimeSlots() {
+            const slots = [];
+            for (let h = 9; h <= 14; h++) {
+                if (h === 14) { // Only 14:00 itself, not 14:30
+                    slots.push({ id: formatTime(h, 0), time: formatTime(h, 0), maxCapacity: 20, currentOccupancy: 0, registrations: [] });
+                } else {
+                    slots.push({ id: formatTime(h, 0), time: formatTime(h, 0), maxCapacity: 20, currentOccupancy: 0, registrations: [] });
+                    slots.push({ id: formatTime(h, 30), time: formatTime(h, 30), maxCapacity: 20, currentOccupancy: 0, registrations: [] });
+                }
+            }
+            return slots;
+        }
+
+        // --- Render UI Functions ---
+        function renderScheduleGrid() {
+            scheduleGrid.innerHTML = '';
+            const sortedSlotIds = Object.keys(allRegistrationsData).sort();
+
+            sortedSlotIds.forEach(slotId => {
+                const slot = allRegistrationsData[slotId];
+                const occupancy = slot.currentOccupancy || 0;
+                const percentage = (occupancy / slot.maxCapacity) * 100;
+                const isDisabled = occupancy >= slot.maxCapacity;
+
+                const button = document.createElement('button');
+                button.id = `slot-${slot.id.replace(':', '-')}`;
+                button.className = `p-4 bg-white border border-gray-200 rounded-[1.5rem] shadow-md flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300
+                                   ${isDisabled ? 'opacity-60 cursor-not-allowed bg-gray-100' : 'hover:ring-2 hover:ring-pink-500 hover:shadow-lg active:scale-98'}`;
+                button.dataset.slotId = slot.id;
+                button.disabled = isDisabled;
+
+                button.innerHTML = `
+                    <div class="z-10 text-xl font-bold text-pink-600 mb-1">${slot.time}</div>
+                    <div class="z-10 text-sm text-gray-600">${occupancy} / ${slot.maxCapacity}</div>
+                    <div class="absolute bottom-0 left-0 h-1.5 bg-pink-300 transition-all duration-300 ease-out rounded-full"
+                         style="width: ${percentage}%;"></div>
+                    ${isDisabled ? `<div class="absolute inset-0 flex items-center justify-center text-red-600 font-bold bg-white bg-opacity-70 text-center text-lg rounded-[1.5rem]"><i data-lucide="full-hand" class="w-6 h-6 mr-2"></i>Lleno</div>` : ''}
+                `;
+                scheduleGrid.appendChild(button);
+            });
+            lucide.createIcons(); // Initialize Lucide icons
+        }
+
+        function renderRegisteredNamesList(slotData) {
+            registeredNamesList.innerHTML = '';
+            if (slotData && slotData.registrations && slotData.registrations.length > 0) {
+                slotData.registrations.forEach(reg => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'flex items-center justify-between p-3 hover:bg-gray-50';
+                    listItem.innerHTML = `
+                        <span class="text-gray-800 text-base">${reg.name}</span>
+                        <button class="delete-btn text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50" data-name="${reg.name}">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        </button>
+                    `;
+                    registeredNamesList.appendChild(listItem);
+                });
+            } else {
+                registeredNamesList.innerHTML = `<li class="p-3 text-gray-500 text-center">No hay inscritos en este turno aún.</li>`;
+            }
+            lucide.createIcons(); // Initialize Lucide icons for delete buttons
+        }
+
+        function updateTotalRegisteredCount() {
+            let total = 0;
+            Object.values(allRegistrationsData).forEach(slot => {
+                total += slot.currentOccupancy;
+            });
+            totalRegisteredCountSpan.textContent = total;
+        }
+
+        // --- Event Handlers ---
+        scheduleGrid.addEventListener('click', (e) => {
+            const button = e.target.closest('button[data-slot-id]');
+            if (!button || button.disabled) return;
+
+            selectedTimeSlotId = button.dataset.slotId;
+            const slotData = allRegistrationsData[selectedTimeSlotId];
+
+            selectedSlotTimeSpan.textContent = slotData.time;
+            currentSlotCountSpan.textContent = slotData.currentOccupancy;
+            renderRegisteredNamesList(slotData);
+            registrationMessageDiv.innerHTML = ''; // Clear previous messages
+            fullNameInput.value = ''; // Clear input field
+
+            registrationPanel.classList.remove('hidden');
+            registrationPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        registrationForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) {
+                registrationMessageDiv.className = 'text-red-500';
+                registrationMessageDiv.textContent = 'Error: No autenticado. Por favor, recarga la página.';
+                return;
+            }
+            if (!selectedTimeSlotId) {
+                registrationMessageDiv.className = 'text-red-500';
+                registrationMessageDiv.textContent = 'Error: No se ha seleccionado un turno.';
+                return;
+            }
+
+            const fullName = fullNameInput.value.trim();
+            if (!fullName) {
+                registrationMessageDiv.className = 'text-red-500';
+                registrationMessageDiv.textContent = 'Por favor, introduce tu nombre completo.';
+                return;
+            }
+
+            registrationMessageDiv.className = 'text-blue-500';
+            registrationMessageDiv.textContent = 'Registrando...';
+            fullNameInput.disabled = true;
+            registrationForm.querySelector('button').disabled = true;
+
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const slotDocRef = doc(registrationsCollectionRef, selectedTimeSlotId);
+                    const slotDoc = await transaction.get(slotDocRef);
+
+                    let currentRegistrations = [];
+                    if (slotDoc.exists()) {
+                        currentRegistrations = slotDoc.data().registrations || [];
+                    }
+
+                    // Check if user already registered in this slot (optional, but good UX)
+                    if (currentRegistrations.some(reg => reg.name === fullName)) {
+                        throw new Error(`¡Ya estás registrado para el turno de ${selectedTimeSlotId}!`);
+                    }
+
+                    if (currentRegistrations.length < 20) {
+                        const newRegistration = { name: fullName, registeredAt: serverTimestamp(), uid: currentUser.uid };
+                        transaction.set(slotDocRef, { registrations: arrayUnion(newRegistration) }, { merge: true });
+                        registrationMessageDiv.className = 'text-green-500';
+                        registrationMessageDiv.textContent = `¡Inscripción exitosa para ${selectedTimeSlotId}!`;
+                        fullNameInput.value = ''; // Clear field on success
+                    } else {
+                        throw new Error("El turno está lleno (20/20). Por favor, selecciona otro horario.");
+                    }
+                });
+            } catch (e) {
+                registrationMessageDiv.className = 'text-red-500';
+                registrationMessageDiv.textContent = `Error al registrar: ${e.message}`;
+            } finally {
+                fullNameInput.disabled = false;
+                registrationForm.querySelector('button').disabled = false;
+            }
+        });
+
+        registeredNamesList.addEventListener('click', async (e) => {
+            const deleteButton = e.target.closest('.delete-btn');
+            if (!deleteButton || !currentUser) return;
+
+            const nameToDelete = deleteButton.dataset.name;
+            if (!confirm(`¿Estás seguro de que quieres eliminar a ${nameToDelete} del turno de ${selectedTimeSlotId}?`)) {
+                return;
+            }
+
+            try {
+                const slotDocRef = doc(registrationsCollectionRef, selectedTimeSlotId);
+                const currentSlotData = allRegistrationsData[selectedTimeSlotId];
+                if (!currentSlotData || !currentSlotData.registrations) {
+                    throw new Error("Datos del turno no encontrados.");
+                }
+
+                // Find the exact registration object to remove.
+                // We assume names are unique enough for this simple app, or we'd use a unique ID.
+                const registrationToRemove = currentSlotData.registrations.find(reg => reg.name === nameToDelete);
+
+                if (registrationToRemove) {
+                    await updateDoc(slotDocRef, {
+                        registrations: arrayRemove(registrationToRemove)
+                    });
+                    registrationMessageDiv.className = 'text-green-500';
+                    registrationMessageDiv.textContent = `Se ha eliminado a ${nameToDelete} del turno.`;
+                } else {
+                    throw new Error("No se encontró la inscripción para eliminar.");
+                }
+            } catch (e) {
+                registrationMessageDiv.className = 'text-red-500';
+                registrationMessageDiv.textContent = `Error al eliminar: ${e.message}`;
+            }
+        });
+
+        viewDianaBtn.addEventListener('click', () => {
+            dianaViewContent.classList.toggle('hidden');
+            if (!dianaViewContent.classList.contains('hidden')) {
+                renderDianaView();
+            }
+        });
+
+        async function renderDianaView() {
+            dianaAppointmentsList.innerHTML = '<p class="text-center text-gray-500">Cargando...</p>';
+            const sortedSlotIds = Object.keys(allRegistrationsData).sort(); // Get sorted slot IDs
+
+            let content = '';
+            sortedSlotIds.forEach(slotId => {
+                const slot = allRegistrationsData[slotId];
+                content += `
+                    <div class="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
+                        <h4 class="text-lg font-bold text-indigo-600 mb-2">Turno: ${slot.time} (${slot.currentOccupancy}/${slot.maxCapacity})</h4>
+                        <ul class="list-disc list-inside text-gray-700">
+                `;
+                if (slot.registrations && slot.registrations.length > 0) {
+                    // Sort registrations by registeredAt for better readability
+                    slot.registrations.sort((a, b) => (a.registeredAt?.toDate() || new Date(0)) - (b.registeredAt?.toDate() || new Date(0)));
+                    slot.registrations.forEach(reg => {
+                        const regTime = reg.registeredAt ? new Date(reg.registeredAt.seconds * 1000).toLocaleString() : 'N/A';
+                        content += `<li>${reg.name} (Registrado: ${regTime})</li>`;
+                    });
+                } else {
+                    content += `<li class="text-gray-500">Sin inscritos.</li>`;
+                }
+                content += `
+                        </ul>
+                    </div>
+                `;
+            });
+            dianaAppointmentsList.innerHTML = content || '<p class="text-center text-gray-500">No hay datos de citas para mostrar.</p>';
+        }
+
+
+        exportDataBtn.addEventListener('click', () => {
+            const sortedSlotIds = Object.keys(allRegistrationsData).sort();
+            let exportText = `Reporte de Inscripciones Maquillaje Cabalgata - ${new Date().toLocaleString()}\n\n`;
+            let totalOverall = 0;
+
+            sortedSlotIds.forEach(slotId => {
+                const slot = allRegistrationsData[slotId];
+                exportText += `--- Turno: ${slot.time} (${slot.currentOccupancy}/${slot.maxCapacity}) ---\n`;
+                if (slot.registrations && slot.registrations.length > 0) {
+                    slot.registrations.sort((a, b) => (a.registeredAt?.toDate() || new Date(0)) - (b.registeredAt?.toDate() || new Date(0)));
+                    slot.registrations.forEach((reg, index) => {
+                        const regTime = reg.registeredAt ? new Date(reg.registeredAt.seconds * 1000).toLocaleString() : 'N/A';
+                        exportText += `${index + 1}. ${reg.name} (ID Interno: ${reg.uid || 'N/A'}, Registrado: ${regTime})\n`;
+                    });
+                    totalOverall += slot.currentOccupancy;
+                } else {
+                    exportText += "Sin inscritos.\n";
+                }
+                exportText += "\n";
+            });
+            exportText += `====================================\n`;
+            exportText += `Total General de Inscritos: ${totalOverall}\n`;
+
+            const blob = new Blob([exportText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `reporte_maquillaje_cabalgata_${new Date().toISOString().slice(0, 10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // --- Firebase Auth and Firestore Listeners ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                console.log("Authenticated anonymously with UID:", user.uid);
+                connectionStatusDot.className = 'w-4 h-4 rounded-full bg-green-500 transition-colors duration-300';
+            } else {
+                console.log("Not authenticated. Attempting anonymous sign-in...");
+                connectionStatusDot.className = 'w-4 h-4 rounded-full bg-yellow-500 transition-colors duration-300';
+                signInAnonymously(auth).catch(error => {
+                    console.error("Error signing in anonymously:", error);
+                    connectionStatusDot.className = 'w-4 h-4 rounded-full bg-red-500 transition-colors duration-300';
+                });
+            }
+        });
+
+        // Real-time listener for all registrations
+        onSnapshot(registrationsCollectionRef, (snapshot) => {
+            // Initialize allRegistrationsData with base time slots
+            const initialSlots = generateTimeSlots();
+            allRegistrationsData = initialSlots.reduce((acc, slot) => {
+                acc[slot.id] = { ...slot };
+                return acc;
+            }, {});
+
+            snapshot.forEach(doc => {
+                const slotId = doc.id;
+                const data = doc.data();
+                const registrations = data.registrations || [];
+
+                if (allRegistrationsData[slotId]) {
+                    allRegistrationsData[slotId].registrations = registrations;
+                    allRegistrationsData[slotId].currentOccupancy = registrations.length;
+                } else {
+                    // This case should ideally not happen if slots are predefined,
+                    // but handling it for robustness (e.g., if a new slot is added manually)
+                    allRegistrationsData[slotId] = {
+                        id: slotId,
+                        time: slotId, // Use id as time if not predefined
+                        maxCapacity: 20, // Default capacity
+                        currentOccupancy: registrations.length,
+                        registrations: registrations
+                    };
+                }
+            });
+
+            renderScheduleGrid();
+            updateTotalRegisteredCount();
+
+            // If a slot is currently selected, update its displayed list
+            if (selectedTimeSlotId && !registrationPanel.classList.contains('hidden')) {
+                const currentSlotData = allRegistrationsData[selectedTimeSlotId];
+                if (currentSlotData) {
+                    currentSlotCountSpan.textContent = currentSlotData.currentOccupancy;
+                    renderRegisteredNamesList(currentSlotData);
+                }
+            }
+
+            // Update Diana's view if it's open
+            if (!dianaViewContent.classList.contains('hidden')) {
+                renderDianaView();
+            }
+
+            console.log("Firebase data updated. All slot data:", allRegistrationsData);
+        }, (error) => {
+            console.error("Error fetching real-time updates:", error);
+            connectionStatusDot.className = 'w-4 h-4 rounded-full bg-red-500 transition-colors duration-300';
+        });
+
+        // Initialize Lucide icons on page load for static icons
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+
+    </script>
+</body>
+
+</html>

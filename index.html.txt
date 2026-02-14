@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Maquillaje Cabalgata - Registro Oficial</title>
+    <!-- Tailwind CSS para diseño profesional -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Iconos Lucide -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f8fafc; 
+            overflow-x: hidden; 
+            touch-action: manipulation; 
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-card { animation: slideIn 0.3s ease forwards; }
+        input { font-size: 16px !important; } /* Evita zoom molesto en móviles iOS */
+        .shadow-premium { box-shadow: 0 20px 50px -12px rgba(79, 70, 229, 0.1); }
+    </style>
+</head>
+<body class="text-slate-900 selection:bg-indigo-100">
+
+    <div id="app" class="max-w-5xl mx-auto p-4 md:p-10">
+        
+        <!-- Pantalla de Carga -->
+        <div id="loader" class="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center transition-opacity duration-700">
+            <div class="p-8 bg-indigo-50 rounded-full mb-4">
+                <i data-lucide="sparkles" class="w-10 h-10 text-indigo-600 animate-spin"></i>
+            </div>
+            <h2 class="text-xl font-extrabold text-slate-800 tracking-tight italic uppercase">Iniciando Sistema</h2>
+            <p id="loading-text" class="text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-2 text-center px-4">Estableciendo conexión segura en tiempo real...</p>
+        </div>
+
+        <!-- Encabezado Principal -->
+        <header class="bg-white rounded-[2.5rem] shadow-sm p-8 md:p-12 mb-10 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-8 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-40 h-40 bg-indigo-50/50 rounded-full -mr-20 -mt-20"></div>
+            <div class="flex items-center gap-6 relative z-10 text-left">
+                <div class="bg-indigo-600 p-5 rounded-[2rem] text-white shadow-2xl shadow-indigo-100">
+                    <i data-lucide="crown" class="w-10 h-10"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight uppercase italic leading-none">Maquillaje Cabalgata</h1>
+                    <div class="flex items-center gap-2 mt-4">
+                        <div id="status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></div>
+                        <span id="status-text" class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sincronizando datos...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-slate-900 px-10 py-6 rounded-[2.5rem] text-center shadow-2xl relative z-10 shrink-0">
+                <span class="block text-[10px] uppercase font-bold text-slate-400 tracking-[0.2em] mb-1">Cupo Máximo</span>
+                <span class="text-2xl font-extrabold text-white">20 Personas</span>
+            </div>
+        </header>
+
+        <!-- Notificaciones Flotantes (Toasts) -->
+        <div id="toast" class="hidden fixed top-6 left-1/2 -translate-x-1/2 z-[110] px-8 py-5 rounded-[2.5rem] shadow-2xl flex items-center gap-4 border bg-white transition-all transform scale-95 opacity-0">
+            <span id="toast-icon"></span>
+            <span id="toast-text" class="font-extrabold text-sm tracking-tight text-slate-700 text-center"></span>
+        </div>
+
+        <!-- Dashboard de Usuario -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <!-- Listado de Horarios -->
+            <div class="lg:col-span-7 space-y-8 text-left">
+                <div class="flex items-center gap-3 px-2">
+                    <div class="bg-pink-100 p-2.5 rounded-xl">
+                        <i data-lucide="clock" class="text-pink-600 w-5 h-5"></i>
+                    </div>
+                    <h2 class="text-xl font-extrabold text-slate-800 uppercase italic tracking-tighter leading-none">Turnos Disponibles</h2>
+                </div>
+                
+                <div id="slots-container" class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <!-- Los horarios se cargan dinámicamente -->
+                </div>
+            </div>
+
+            <!-- Panel de Registro -->
+            <div id="register-section" class="lg:col-span-5">
+                <div id="panel" class="sticky top-8 bg-white rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden min-h-[450px] transition-all duration-500">
+                    <!-- Se llena al pulsar una hora -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Banner de Contador Global -->
+        <div class="mt-14 bg-white rounded-[3.5rem] shadow-xl border border-slate-100 p-12 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden group">
+            <div class="flex items-center gap-8 text-left w-full relative z-10">
+                <div class="bg-pink-600 p-8 rounded-[2.5rem] text-white shadow-2xl rotate-3 shrink-0 group-hover:rotate-0 transition-transform">
+                    <i data-lucide="users" class="w-12 h-12"></i>
+                </div>
+                <div>
+                    <h4 class="text-4xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">Inscritos Totales</h4>
+                    <p class="text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-3 italic">Actualización automática para todos</p>
+                </div>
+            </div>
+            <div id="counter-front" class="text-9xl font-black text-indigo-600 leading-none tracking-tighter relative z-10 shrink-0">0</div>
+        </div>
+
+        <!-- Panel Admin Diana (Oculto) -->
+        <div id="admin-view" class="hidden mt-14 bg-white rounded-[3.5rem] shadow-sm border border-slate-100 overflow-hidden mb-32 text-left">
+            <div class="p-12 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
+                <h2 class="text-2xl font-black text-slate-800 uppercase italic tracking-tighter leading-none text-left">Resumen Diana</h2>
+                <button onclick="window.exportToTxt()" class="p-5 bg-white border border-slate-200 rounded-[1.5rem] hover:bg-slate-50 shadow-sm transition-all active:scale-90">
+                    <i data-lucide="download-cloud" class="text-indigo-600"></i>
+                </button>
+            </div>
+            <div id="admin-grid" class="p-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12"></div>
+        </div>
+
+        <!-- Status Final -->
+        <div class="mt-20 text-center pb-24">
+            <div class="inline-flex items-center gap-3 px-8 py-4 bg-white rounded-full border border-stone-200 text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] shadow-sm">
+                <div id="dot-final" class="w-2 h-2 rounded-full bg-amber-400"></div>
+                <span id="label-final">Esperando Servidor...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, runTransaction, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // CONFIGURACIÓN (REGLA 1 Y 3)
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        // Identificador exclusivo para esta aplicación
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cabalgata-makeup-final-v12';
+
+        let state = { registrations: [], selectedSlot: null, isSubmitting: false, user: null, isAdmin: false };
+        const MAX = 20;
+        const slots = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00"];
+
+        // 1. INICIALIZACIÓN DE SEGURIDAD (REGLA 3: Auth obligatoria)
+        async function bootstrap() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                onAuthStateChanged(auth, (u) => {
+                    if (u) {
+                        state.user = u;
+                        document.getElementById('loader').classList.add('opacity-0', 'pointer-events-none');
+                        document.getElementById('status-dot').className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+                        document.getElementById('status-text').innerText = "Sistema Sincronizado";
+                        document.getElementById('dot-final').className = "w-2 h-2 rounded-full bg-emerald-500";
+                        document.getElementById('label-final').innerText = "Acceso a Datos Abierto";
+                        startSync();
+                    }
+                });
+            } catch (e) {
+                document.getElementById('loading-text').innerText = "Error de permisos. Intenta recargar.";
+            }
+        }
+
+        // 2. SINCRONIZACIÓN DE DATOS (REGLA 1 Y 2)
+        function startSync() {
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'registrations');
+            onSnapshot(colRef, (snap) => {
+                state.registrations = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderUI();
+            }, (err) => {
+                console.error(err);
+                if (err.code === 'permission-denied') {
+                    document.getElementById('status-text').innerText = "Permiso Denegado (1040)";
+                }
+            });
+        }
+
+        // --- RENDERIZADO DE INTERFAZ ---
+
+        function renderUI() {
+            renderSlots();
+            renderPanel();
+            renderAdmin();
+            document.getElementById('counter-front').innerText = state.registrations.length;
+            lucide.createIcons();
+        }
+
+        function renderSlots() {
+            const container = document.getElementById('slots-container');
+            container.innerHTML = slots.map((s, i) => {
+                const list = state.registrations.filter(p => p.slot === s);
+                const full = list.length >= MAX;
+                const sel = state.selectedSlot === s;
+                const pc = Math.round((list.length / MAX) * 100);
+
+                return `
+                    <button onclick="window.selectSlot('${s}')" class="group relative flex flex-col p-7 rounded-[2.5rem] border-2 transition-all duration-300 text-left ${sel ? 'bg-white border-indigo-600 shadow-2xl shadow-indigo-100 scale-[1.03] z-10' : full ? 'bg-slate-100 border-slate-200 opacity-60' : 'bg-white border-slate-100 hover:border-pink-200 hover:shadow-xl'}" style="animation: slideIn 0.3s ease forwards ${i*20}ms">
+                        <div class="flex justify-between items-start mb-5 text-left">
+                            <div class="text-4xl font-extrabold italic tracking-tighter ${sel ? 'text-indigo-700' : 'text-slate-800'}">${s}</div>
+                            <div class="px-4 py-1.5 rounded-2xl text-[10px] font-black tracking-widest uppercase ${full ? 'bg-red-100 text-red-600' : sel ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}">
+                                ${list.length} / 20
+                            </div>
+                        </div>
+                        <div class="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden mb-3 border border-white">
+                            <div class="h-full transition-all duration-1000 ${full ? 'bg-red-400' : sel ? 'bg-gradient-to-r from-indigo-600 to-indigo-400' : 'bg-pink-400'}" style="width: ${pc}%"></div>
+                        </div>
+                        <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                            <span class="text-slate-400">${full ? 'Turno Completo' : 'Huecos Disponibles'}</span>
+                            <span class="${sel ? 'text-indigo-600 font-extrabold' : 'text-slate-400'}">${pc}% LLENO</span>
+                        </div>
+                    </button>`;
+            }).join('');
+        }
+
+        function renderPanel() {
+            const p = document.getElementById('panel');
+            if (!state.selectedSlot) {
+                p.innerHTML = `<div class="p-20 text-center space-y-8 animate-card"><div class="w-32 h-32 bg-slate-50 rounded-[3.5rem] flex items-center justify-center mx-auto text-slate-200 border border-slate-100 shadow-inner group"><i data-lucide="hand" class="w-16 h-16 transition-transform group-hover:scale-110 duration-700"></i></div><p class="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] leading-relaxed max-w-[200px] mx-auto">Selecciona una hora a la izquierda para empezar</p></div>`;
+                return;
+            }
+            const list = state.registrations.filter(r => r.slot === state.selectedSlot);
+            const full = list.length >= MAX;
+
+            p.innerHTML = `
+                <div class="animate-card text-left">
+                    <div class="p-10 bg-indigo-600 text-white flex justify-between items-center relative overflow-hidden">
+                        <i data-lucide="sparkles" class="absolute -bottom-4 -right-4 w-40 h-40 opacity-10 rotate-12"></i>
+                        <div class="relative z-10">
+                            <h3 class="text-3xl font-extrabold italic tracking-tighter leading-none">${state.selectedSlot}</h3>
+                            <p class="text-indigo-100 text-[10px] font-bold uppercase tracking-widest mt-4 opacity-80 italic">Ocupación actual: ${list.length}/20</p>
+                        </div>
+                        <button onclick="window.selectSlot(null)" class="p-4 bg-white/10 hover:bg-white/20 rounded-2xl active:scale-90 transition-transform"><i data-lucide="x"></i></button>
+                    </div>
+                    <div class="p-10 space-y-10">
+                        <div class="flex flex-col gap-4 text-left">
+                            <input id="name-input" type="text" placeholder="Escribe tu nombre completo..." class="w-full px-8 py-6 rounded-[2.5rem] border-2 border-slate-100 focus:border-indigo-600 outline-none font-bold text-xl disabled:bg-slate-50" ${state.isSubmitting ? 'disabled' : ''}>
+                            <button onclick="window.handleRegister()" class="w-full bg-slate-900 text-white py-6 rounded-[2.5rem] hover:bg-indigo-600 font-black uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl" ${full || state.isSubmitting ? 'disabled' : ''}>
+                                ${state.isSubmitting ? '<i data-lucide="refresh-cw" class="animate-spin"></i>' : 'Confirmar Mi Plaza'}
+                            </button>
+                        </div>
+                        <div class="text-left">
+                            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 border-b pb-4 italic leading-none flex items-center gap-2">
+                                <i data-lucide="user-check" class="text-indigo-600 w-4 h-4"></i> Inscritos para esta hora (${list.length})
+                            </h4>
+                            <div class="space-y-3 max-h-[350px] overflow-y-auto pr-3 custom-scrollbar">
+                                ${list.map((r, i) => `<div class="flex items-center justify-between p-5 bg-slate-50 rounded-3xl group border border-transparent hover:border-indigo-100 hover:bg-white transition-all"><span class="font-bold text-slate-700 truncate flex gap-4"><span class="text-indigo-400 italic leading-none">${i+1}</span>${r.name}</span><button onclick="window.deleteEntry('${r.id}')" class="text-slate-300 hover:text-red-500 transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button></div>`).join('') || '<p class="text-center text-slate-300 italic py-10">No hay nadie apuntado todavía</p>'}
+                            </div>
+                        </div>
+                        <button onclick="window.toggleAdmin()" class="w-full py-5 bg-white border border-slate-200 text-slate-800 text-[10px] font-black rounded-[2rem] hover:bg-slate-50 transition-all uppercase tracking-widest shadow-sm">Vista General de Grupos</button>
+                    </div>
+                </div>`;
+        }
+
+        function renderAdmin() {
+            const g = document.getElementById('admin-grid');
+            if (!state.isAdmin) return;
+            g.innerHTML = slots.map(s => {
+                const list = state.registrations.filter(r => r.slot === s).sort((a,b) => a.createdAt.localeCompare(b.createdAt));
+                if (list.length === 0) return '';
+                return `<div class="animate-card text-left"><h3 class="font-black text-indigo-700 text-2xl italic mb-5 border-b-2 border-indigo-50 pb-2">${s}</h3><ul class="text-[12px] space-y-3 font-bold text-slate-500 uppercase tracking-tight">${list.map((r, i) => `<li class="flex gap-3"><span class="text-indigo-200 w-4">${i+1}.</span> ${r.name}</li>`).join('')}</ul></div>`;
+            }).join('');
+        }
+
+        // --- ACCIONES DE CONTROL ---
+
+        window.selectSlot = (s) => {
+            state.selectedSlot = s;
+            renderUI();
+            if (s && window.innerWidth < 1024) {
+                document.getElementById('register-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        };
+
+        window.handleRegister = async () => {
+            const input = document.getElementById('name-input');
+            const name = input.value.trim();
+            if (!name || !state.selectedSlot || state.isSubmitting) return;
+            state.isSubmitting = true; renderUI();
+
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'registrations', crypto.randomUUID());
+            try {
+                // REGLA ANTI-CHOQUE: Transacción atómica directa para evitar duplicados
+                await runTransaction(db, async (t) => {
+                    const current = state.registrations.filter(r => r.slot === state.selectedSlot);
+                    if (current.length >= MAX) throw new Error("FULL");
+                    t.set(docRef, { name, slot: state.selectedSlot, createdAt: new Date().toISOString(), userId: state.user.uid });
+                });
+                showToast('success', '¡Plaza reservada con éxito!');
+                input.value = '';
+            } catch (err) {
+                if (err.message === "FULL") showToast('error', '¡Vaya! Este turno se acaba de llenar.');
+                else showToast('error', 'Error al conectar con la nube.');
+            } finally { state.isSubmitting = false; renderUI(); }
+        };
+
+        window.deleteEntry = async (id) => { 
+            if (!confirm('¿Eliminar este nombre de la lista?')) return; 
+            try { 
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'registrations', id)); 
+                showToast('success', 'Registro eliminado.'); 
+            } catch (e) { showToast('error', 'No se pudo eliminar'); } 
+        };
+
+        window.toggleAdmin = () => { 
+            state.isAdmin = !state.isAdmin; 
+            document.getElementById('admin-view').classList.toggle('hidden'); 
+            renderUI(); 
+            if (state.isAdmin) setTimeout(() => document.getElementById('admin-view').scrollIntoView({ behavior: 'smooth' }), 100); 
+        };
+
+        window.exportToTxt = () => {
+            let txt = `LISTA OFICIAL MAQUILLAJE CABALGATA\nInscritos totales: ${state.registrations.length}\n\n`;
+            slots.forEach(s => {
+                const list = state.registrations.filter(r => r.slot === s).sort((a,b) => a.createdAt.localeCompare(b.createdAt));
+                if (list.length > 0) txt += `[${s}] (${list.length}/20):\n` + list.map((r,i) => `   ${i+1}. ${r.name}`).join('\n') + '\n\n';
+            });
+            const b = new Blob([txt], { type: 'text/plain' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'lista_maquillaje.txt'; a.click();
+        };
+
+        function showToast(type, text) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-icon').innerHTML = `<i data-lucide="${type === 'error' ? 'alert-circle' : 'check-circle-2'}"></i>`;
+            document.getElementById('toast-text').innerText = text;
+            t.className = `fixed top-6 left-1/2 -translate-x-1/2 z-[110] px-10 py-5 rounded-[2.5rem] shadow-2xl flex items-center gap-4 border-2 bg-white transition-all transform duration-500 ${type === 'error' ? 'border-red-500 text-red-600' : 'border-emerald-500 text-emerald-600'}`;
+            t.classList.remove('hidden'); 
+            setTimeout(() => { t.classList.remove('opacity-0', 'scale-95'); t.classList.add('opacity-100', 'scale-100'); }, 10);
+            lucide.createIcons(); 
+            setTimeout(() => { t.classList.replace('opacity-100', 'opacity-0'); t.classList.replace('scale-100', 'scale-95'); setTimeout(() => t.classList.add('hidden'), 500); }, 4000);
+        }
+
+        bootstrap();
+    </script>
+</body>
+</html>

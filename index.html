@@ -357,7 +357,63 @@
             }
         };
 
-        // ============================================
+        // Inicialización Robusta de Firebase
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            db = firebase.firestore();
+            console.log("Firebase inicializado correctamente");
+
+            // TEST DE CONEXIÓN Y PERMISOS AUTOMÁTICO
+            // Intentamos escribir un documento de prueba para ver si tenemos permisos
+            const testId = 'test_' + Date.now();
+            const testRef = db.collection('registrations').doc('connectivity_test');
+
+            testRef.set({ last_check: firebase.firestore.FieldValue.serverTimestamp() })
+                .then(() => {
+                    console.log("✅ Conexión de escritura verificada");
+                    updateStatus('connected');
+                })
+                .catch((error) => {
+                    console.error("❌ ERROR DE PERMISOS:", error);
+                    updateStatus('error');
+
+                    if (error.code && error.code.includes('permission-denied')) {
+                        // MODAL DE BLOQUEO DE SEGURIDAD (Pantalla completa)
+                        const modal = document.createElement('div');
+                        modal.innerHTML = `
+                            <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;">
+                                <div style="background:white;padding:40px;border-radius:20px;max-width:500px;text-align:center;box-shadow:0 0 50px rgba(255,0,0,0.5);animation:slideIn 0.3s ease-out;">
+                                    <h1 style="color:#dc2626;font-size:28px;font-weight:900;margin-bottom:20px;line-height:1.2;">⛔ BASE DE DATOS BLOQUEADA</h1>
+                                    <p style="font-size:16px;color:#4b5563;margin-bottom:25px;line-height:1.5;">Tu base de datos está protegida y no deja escribir a nadie.<br>Tienes que desbloquearla manualmente.</p>
+                                    
+                                    <div style="background:#fef2f2;padding:15px;border-radius:10px;text-align:left;margin-bottom:25px;border:2px solid #fee2e2;">
+                                        <strong style="color:#991b1b;display:block;margin-bottom:5px;">1. Copia este código:</strong>
+                                        <code style="display:block;background:white;padding:10px;border-radius:5px;border:1px solid #e5e7eb;color:#2563eb;font-weight:bold;font-size:16px;user-select:all;">allow read, write: if true;</code>
+                                    </div>
+                                    
+                                    <a href="https://console.firebase.google.com/u/0/project/merello-maquillaje/firestore/rules" target="_blank" 
+                                       style="display:block;background:#2563eb;color:white;text-decoration:none;padding:18px;border-radius:12px;font-weight:bold;font-size:18px;margin-bottom:15px;transition:transform 0.1s;box-shadow:0 4px 6px rgba(37,99,235,0.3);">
+                                        👉 IR A DESBLOQUEAR AHORA
+                                    </a>
+                                    <p style="font-size:13px;color:#6b7280;">(Se abrirá Google. Pega el código en "Reglas" y dale a Publicar)</p>
+                                </div>
+                            </div>
+                        `;
+                        document.body.appendChild(modal);
+                    } else {
+                        const errorBox = document.getElementById('error-box');
+                        document.getElementById('error-msg').textContent = "Error de conexión: " + error.message;
+                        errorBox.style.display = 'block';
+                    }
+                });
+
+        } catch (e) {
+            console.error("Error crítico de Firebase:", e);
+            document.getElementById('error-box').style.display = 'block';
+            document.getElementById('error-msg').textContent = e.message;
+        }
 
         const MAX_PER_SLOT = 20;
         const SLOTS = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00"];
@@ -370,7 +426,7 @@
                     registrations.push({ id: doc.id, ...doc.data() });
                 });
                 render();
-                updateStatus('connected');
+                // updateStatus('connected'); // Ya lo maneja el test de conexión inicial
                 // Ocultar mensaje de carga
                 const loader = document.querySelector('#slots-container .animate-pulse');
                 if (loader && loader.textContent === 'Cargando horarios...') loader.remove();
@@ -384,7 +440,8 @@
                 errorBox.style.display = 'block';
 
                 if (error.code === 'permission-denied') {
-                    errorMsg.innerHTML = "PERMISO DENEGADO: Faltan las reglas de seguridad en Firebase Console.<br>Ve a Firestore Database > Reglas y pon 'allow read, write: if true;'";
+                    // Ya manejado por el test inicial, pero por si acaso falla en tiempo de ejecución
+                    errorMsg.innerHTML = "PERMISO DENEGADO EN TIEMPO REAL.";
                 } else if (error.code === 'unavailable') {
                     errorMsg.textContent = "SIN CONEXIÓN: Verifica tu internet.";
                 } else {
@@ -393,7 +450,14 @@
             });
         }
 
-
+        function render() {
+            renderSlots();
+            renderPanel();
+            renderAdmin();
+            const counter = document.getElementById('counter-front');
+            if (counter) counter.textContent = registrations.length;
+            lucide.createIcons();
+        }
 
         function renderSlots() {
             const container = document.getElementById('slots-container');
@@ -520,66 +584,6 @@
             `;
             lucide.createIcons();
         }
-
-        window.deleteEntry = async function (id, event) {
-            if (event) {
-                event.stopPropagation();
-                event.preventDefault();
-            }
-            console.log("Intentando borrar registro:", id);
-
-            if (!confirm('¿Seguro que quieres borrar a esta persona?')) return;
-
-            try {
-                await db.collection('registrations').doc(id).delete();
-                console.log("Registro borrado:", id);
-                showToast('success', 'Eliminado correctamente');
-            } catch (err) {
-                console.error("Error al borrar:", err);
-                alert("Error al borrar: " + err.message);
-            }
-        };
-
-        window.toggleAdmin = function () {
-            if (!isAdmin) {
-                const password = prompt("Introduce la contraseña de Admin:");
-                // CONTRASEÑA SIMPLE
-                if (password !== "admin2026") {
-                    alert("🚫 Contraseña incorrecta");
-                    return;
-                }
-            }
-            isAdmin = !isAdmin;
-            // Si salimos de admin, ocultamos la vista global
-            if (!isAdmin) {
-                document.getElementById('admin-view').classList.add('hidden');
-            } else {
-                document.getElementById('admin-view').classList.remove('hidden');
-            }
-            render();
-            if (isAdmin) {
-                setTimeout(() => document.getElementById('admin-view').scrollIntoView({ behavior: 'smooth' }), 100);
-            }
-        };
-
-        window.selectSlot = function (slot) {
-            // Protección adicional lógica
-            if (slot === "14:00" && !isAdmin) {
-                alert("🔒 Este turno es exclusivo para Administradores.");
-                return;
-            }
-            selectedSlot = slot;
-            render();
-            // Scroll automático al panel
-            if (slot) {
-                const panel = document.getElementById('register-anchor');
-                if (panel) {
-                    setTimeout(() => {
-                        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 100);
-                }
-            }
-        };
 
         function renderAdmin() {
             if (!isAdmin) return;
